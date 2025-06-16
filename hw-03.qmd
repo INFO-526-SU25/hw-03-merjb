@@ -1,6 +1,6 @@
 ---
 title: "HW 03"
-author: "INSERT YOUR NAME HERE"
+author: "Meredith Casella Jean-Baptiste"
 format:
   html:
     embed-resources: true
@@ -10,20 +10,185 @@ toc: true
 ## 1 - Du Bois challenge.
 
 ```{r}
-#| label: label-me-1
+#| label: Du Bois challenge
+
+  if (!require("pacman"))
+  install.packages("pacman")
+pacman::p_load(here)
+pacman::p_load(tidyverse, janitor, patchwork, extrafont, pBrackets, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, ggimage, grid, png)
+
+ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
+
+options(width = 65)
+
+knitr::opts_chunk$set(
+  fig.width = 7,        # 7" width
+  fig.asp = 0.618,      # the golden ratio
+  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
+  fig.align = "center", # center align figures
+  dpi = 300             # higher dpi, sharper image
+)
+
+  income <-read_csv(here("data", "income.csv")) %>% 
+    janitor::clean_names()
+  img <- readPNG(here("Parchment_paper.png"))
+  
+  income <- income %>% 
+    pivot_longer(cols = c('rent', 'food', 'clothes', 'tax', 'other'),
+                 names_to = "category",
+                 values_to = "percentage")
+  income %>% 
+    ggplot(aes(x = percentage, y = class, fill = category)) +
+    geom_bar(stat = "identity", color = "white")+
+    #unsuccessful in adding background image from png file
+#    annotation_custom(rasterGrob(img)) +
+    scale_fill_manual(
+      values = c("rent" = "black", "food" = "#B19cd9", "clothes" = "#ffc0cb", "tax" = "#a1a1a1", "other" = "#e9e9e9")) +
+    #percentage labels not lining up well nor with % symbols
+    geom_text(aes(label = percentage), 
+              position = position_stack(reverse = TRUE,vjust = 0.1)) +
+    theme(legend.position = "none") +
+      labs(
+        y = "",
+        x = "",
+        title = "INCOME AND EXPENDITURE OF 150 NEGRO FAMILIES IN ATLANTA, GA., U.S.A.")+
+    theme(plot.title = element_text(hjust = 0.2))
 
 ```
 
 ## 2 - COVID survey - interpret
 
 ```{r}
-#| label: label-me-2
+#| label: Interpretation of graphic from publication
+
+
+# INTERPRETATION
+#Your task for this question is to take a close look at this plot and interpret it. There is a lot going on here, which is customary for plots that go into scientific publications – they tend to be very information dense, for better or worse… As you interpret it, discuss if there are any results that agree or disagree with your intuition. There is a lot you can say, but we don’t need you to be exhaustive. Please provide three concrete examples.
+#The plot overall shows a few interesting points about the Covid-19 vaccine. 
+#First, there is a wide variety in whether people think the vaccine is safe, with the mean agreeing but a wide percentile spread in the responses.
+#Second, overall participants agreed that they would feel safer at work if they were vaccinated with >30 and < 20 year old groups feeling less so, and most interestingly, those who are unvaccinated, Native Americans, and those who preferred not to disclose their gender, would feel less safer at work, where there was more of a wide percentile spread in the responses.
+#Third, there is an overall concern for side effects and vaccine safety across almost all groups
+#Fourth, the majority of participants are both confident in and trust the information they have received on the vaccines with the exception of the unvaccinated, those who had the flu vaccine, Native Americans, and those who preferred not to disclose their gender groups.
+#Lastly, almost all groups of participants would recommend the vaccine to family or friends with the exception of the unvaccinated; however, Native Americans and those who preferred not to disclose their gender had a wider percentile spread in their responses.
 
 ```
 
 ## 3 - COVID survey - reconstruct
 
+```{r}
+#| label: label-me-3
+#SETUP for THEMES 
+if (!require("pacman"))
+  install.packages("pacman")
+pacman::p_load(here)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats)
+
+ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
+
+options(width = 65)
+
+knitr::opts_chunk$set(
+  fig.width = 7,        # 7" width
+  fig.asp = 0.618,      # the golden ratio
+  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
+  fig.align = "center", # center align figures
+  dpi = 300             # higher dpi, sharper image
+)
+
+devtools::install_github("tidyverse/dsbox")
+library(dsbox)
+covid-survey <-read_csv(here("data", "covid-survey.csv"))
+
+#covid_survey |> 
+#  filter(if_all(everything(), ~!is.na(.x)))
+
+covid-survey |>
+  mutate(exp_already_vax = recode(exp_already_vax, '0' = 'No', '1' = 'Yes'),
+         exp_flu_vax = recode(exp_flu_vax, '0' = 'No', '1' = 'Yes'),
+         exp_profession = recode(exp_profesion, '0' = 'Medical', '1' = 'Nursing'),
+         exp_gender = recode(exp_gender, '0' = 'Male', '1' = 'Female', '3' = 'Non-binary third gender', '4' = 'Prefer not to say'),
+         exp_race = recode(exp_race, '1' = 'American Indian/ Alaskan Native', '2' = 'Asian', '3' = 'Black/ African American', '4' = 'Native Hawaiian/ Other', '5' = 'White'),
+         exp_ethnicity = recode(exp_ethnicity, '1' = 'Hispanic/ Latino', '2' = 'Non-Hispanic/ Non-Latino'),
+         exp_age_bin = recode(exp_age_bin, '0' = '<20', '20' = '21-25', '25' = '26-30', '30' = '>30' ))
+
+
+covid_survey_longer <- covid_survey |>
+  pivot_longer(
+    cols = starts_with("exp_"),
+    names_to = "explanatory",
+    values_to = "explanatory_value"
+  ) |>
+  filter(!is.na(explanatory_value)) |>
+  pivot_longer(
+    cols = starts_with("resp_"),
+    names_to = "response",
+    values_to = "response_value"
+  )
+glimpse(covid_survey_longer)
+
+```
 
 ## 4 - COVID survey - re-reconstruct
 
+```{r}
+#| label: label-me-3
+#SETUP for THEMES 
+if (!require("pacman"))
+  install.packages("pacman")
+pacman::p_load(here)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats)
+
+ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
+
+options(width = 65)
+
+knitr::opts_chunk$set(
+  fig.width = 7,        # 7" width
+  fig.asp = 0.618,      # the golden ratio
+  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
+  fig.align = "center", # center align figures
+  dpi = 300             # higher dpi, sharper image
+)
+
+devtools::install_github("tidyverse/dsbox")
+library(dsbox)
+covid-survey <-read_csv(here("data", "covid-survey.csv"))
+
+
+```
+
 ## 5 - COVID survey - another view
+
+```{r}
+#| label: label-me-3
+#SETUP for THEMES 
+if (!require("pacman"))
+  install.packages("pacman")
+pacman::p_load(here)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats)
+
+ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
+
+options(width = 65)
+
+knitr::opts_chunk$set(
+  fig.width = 7,        # 7" width
+  fig.asp = 0.618,      # the golden ratio
+  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
+  fig.align = "center", # center align figures
+  dpi = 300             # higher dpi, sharper image
+)
+
+devtools::install_github("tidyverse/dsbox")
+library(dsbox)
+covid-survey <-read_csv(here("data", "covid-survey.csv"))
+
+
+```
+
+### Citations
+
+#1: #DuBois challenge from tidy_tuesday \#, how to create a stacked bar plot https://github.com/marisalyn/tidy_tuesday/blob/master/20210216_dubois.Rmd
+https://stackoverflow.com/questions/6851522/how-do-i-plot-a-stacked-bar-with-ggplot 
+
+#3: How to recode in R: https://www.statology.org/recode-dplyr/

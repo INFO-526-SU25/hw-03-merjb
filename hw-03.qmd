@@ -7,15 +7,14 @@ format:
 toc: true
 ---
 
-## 1 - Du Bois challenge.
-
 ```{r}
-#| label: Du Bois challenge
-
-  if (!require("pacman"))
+#SETUP for THEMES 
+if (!require("pacman"))
   install.packages("pacman")
 pacman::p_load(here)
-pacman::p_load(tidyverse, janitor, patchwork, extrafont, pBrackets, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, ggimage, grid, png)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, dsbox)
+devtools::install_github("tidyverse/dsbox")
+library(dsbox)
 
 ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
 
@@ -28,6 +27,17 @@ knitr::opts_chunk$set(
   fig.align = "center", # center align figures
   dpi = 300             # higher dpi, sharper image
 )
+```
+
+## 1 - Du Bois challenge.
+
+```{r}
+#| label: Du Bois challenge
+
+  if (!require("pacman"))
+  install.packages("pacman")
+pacman::p_load(here)
+pacman::p_load(tidyverse, janitor, patchwork, extrafont, pBrackets, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, ggimage, grid, png)
 
   income <-read_csv(here("data", "income.csv")) %>% 
     janitor::clean_names()
@@ -76,42 +86,60 @@ knitr::opts_chunk$set(
 ## 3 - COVID survey - reconstruct
 
 ```{r}
-#| label: label-me-3
-#SETUP for THEMES 
-if (!require("pacman"))
-  install.packages("pacman")
-pacman::p_load(here)
-pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats)
+#| label: Covid-19
 
-ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
 
-options(width = 65)
+#devtools::install_github("tidyverse/dsbox")
+#library(dsbox)
+covid_survey <-read_csv(here("data", "covid-survey.csv"))
 
-knitr::opts_chunk$set(
-  fig.width = 7,        # 7" width
-  fig.asp = 0.618,      # the golden ratio
-  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
-  fig.align = "center", # center align figures
-  dpi = 300             # higher dpi, sharper image
-)
 
-devtools::install_github("tidyverse/dsbox")
-library(dsbox)
-covid-survey <-read_csv(here("data", "covid-survey.csv"))
+  # Rename columns to first-row names
+colnames(covid_survey)[2] = "exp_profession"
+colnames(covid_survey)[1] = "response_id"
+colnames(covid_survey)[3] = "exp_flu_vax"
+colnames(covid_survey)[4] = "exp_gender"
+colnames(covid_survey)[5] = "exp_race"
+colnames(covid_survey)[6] = "exp_ethnicity"
+colnames(covid_survey)[7] = "exp_age_bin"
+colnames(covid_survey)[8] = "exp_already_vax"
+colnames(covid_survey)[9] = "resp_safety"
+colnames(covid_survey)[10] = "resp_confidence_science"
+colnames(covid_survey)[11] = "resp_concern_safety"
+colnames(covid_survey)[12] = "resp_feel_safe_at_work"
+colnames(covid_survey)[13] = "resp_will_recommend"
+colnames(covid_survey)[14] = "resp_trust_info"
+dim(covid_survey)
 
-#covid_survey |> 
+#remove first row
+covid_survey <- covid_survey[-1, ]
+#remove only rows with all NA, the first version did not work
+#covid_survey |>
 #  filter(if_all(everything(), ~!is.na(.x)))
+covid_survey <- covid_survey[!(is.na(covid_survey$exp_profession)) | !(is.na(covid_survey$exp_flu_vax)) | !(is.na(covid_survey$exp_gender)) | !(is.na(covid_survey$exp_race)) | !(is.na(covid_survey$exp_ethnicity)) | !(is.na(covid_survey$exp_age_bin)) | !(is.na(covid_survey$exp_already_vax)) | !(is.na(covid_survey$resp_safety)) | !(is.na(covid_survey$resp_confidence_science)) | !(is.na(covid_survey$resp_concern_safety)) | !(is.na(covid_survey$resp_feel_safe_at_work)) | !(is.na(covid_survey$resp_will_recommend)) | !(is.na(covid_survey$resp_trust_info)),]
 
-covid-survey |>
-  mutate(exp_already_vax = recode(exp_already_vax, '0' = 'No', '1' = 'Yes'),
-         exp_flu_vax = recode(exp_flu_vax, '0' = 'No', '1' = 'Yes'),
-         exp_profession = recode(exp_profesion, '0' = 'Medical', '1' = 'Nursing'),
-         exp_gender = recode(exp_gender, '0' = 'Male', '1' = 'Female', '3' = 'Non-binary third gender', '4' = 'Prefer not to say'),
-         exp_race = recode(exp_race, '1' = 'American Indian/ Alaskan Native', '2' = 'Asian', '3' = 'Black/ African American', '4' = 'Native Hawaiian/ Other', '5' = 'White'),
-         exp_ethnicity = recode(exp_ethnicity, '1' = 'Hispanic/ Latino', '2' = 'Non-Hispanic/ Non-Latino'),
-         exp_age_bin = recode(exp_age_bin, '0' = '<20', '20' = '21-25', '25' = '26-30', '30' = '>30' ))
+#convert chr to dbl
+covid_survey$resp_safety <- as.numeric(as.character(covid_survey$resp_safety)) 
+covid_survey$resp_confidence_science <- as.numeric(as.character(covid_survey$resp_confidence_science)) 
+covid_survey$resp_concern_safety <- as.numeric(as.character(covid_survey$resp_concern_safety)) 
+covid_survey$resp_feel_safe_at_work <- as.numeric(as.character(covid_survey$resp_feel_safe_at_work)) 
+covid_survey$resp_will_recommend <- as.numeric(as.character(covid_survey$resp_will_recommend)) 
+covid_survey$resp_trust_info <- as.numeric(as.character(covid_survey$resp_trust_info)) 
 
+library(dplyr)
+covid_survey <- covid_survey %>% 
+  mutate(
+  exp_already_vax=recode(exp_already_vax, '0'='No', '1'='Yes'),
+  exp_flu_vax=recode(exp_flu_vax, '0'='No', '1'='Yes'),
+  exp_profession=recode(exp_profession, '0'='Medical', '1'='Nursing'),
+  exp_gender=recode(exp_gender, '0'='Male', '1'='Female', '3' = 'Non-binary third gender', '4' = 'Prefer not to say'),
+  exp_race=recode(exp_race, '1'='American Indian/ Alaskan Native', '2'='Asian', '3'='Black/ African American', '4'='Native Hawaiian/ Other', '5' = 'White'),
+  exp_ethnicity=recode(exp_ethnicity, '1'='Hispanic/ Latino', '2'='Non-Hispanic/ Non-Latino'),
+  exp_age_bin=recode(exp_age_bin, '0'='<20', '20'='21-25', '25'='26-30', '30'='>30' ))
 
+glimpse (covid_survey)
+
+library(tidyr)
 covid_survey_longer <- covid_survey |>
   pivot_longer(
     cols = starts_with("exp_"),
@@ -124,7 +152,16 @@ covid_survey_longer <- covid_survey |>
     names_to = "response",
     values_to = "response_value"
   )
-glimpse(covid_survey_longer)
+
+covid_survey_stats_by_group <- covid_survey_longer %>% 
+  group_by(explanatory, explanatory_value, response) %>% 
+  summarise_at(vars(response_value), list(mean = mean)) %>% 
+  summarise(low = quantile(response_value, probs = .1)) %>% 
+  summarise(high = quantile(response_value, probs = .9))
+
+
+#glimpse(covid_survey)
+#view(covid_survey_longer)
 
 ```
 
@@ -161,26 +198,9 @@ covid-survey <-read_csv(here("data", "covid-survey.csv"))
 
 ```{r}
 #| label: label-me-3
-#SETUP for THEMES 
-if (!require("pacman"))
-  install.packages("pacman")
-pacman::p_load(here)
-pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats)
 
-ggplot2::theme_set(ggplot2::theme_minimal(base_size = 14))
 
-options(width = 65)
 
-knitr::opts_chunk$set(
-  fig.width = 7,        # 7" width
-  fig.asp = 0.618,      # the golden ratio
-  fig.retina = 3,       # dpi multiplier for displaying HTML output on retina
-  fig.align = "center", # center align figures
-  dpi = 300             # higher dpi, sharper image
-)
-
-devtools::install_github("tidyverse/dsbox")
-library(dsbox)
 covid-survey <-read_csv(here("data", "covid-survey.csv"))
 
 
@@ -192,3 +212,6 @@ covid-survey <-read_csv(here("data", "covid-survey.csv"))
 https://stackoverflow.com/questions/6851522/how-do-i-plot-a-stacked-bar-with-ggplot 
 
 #3: How to recode in R: https://www.statology.org/recode-dplyr/
+#remove rows with all NA: https://stackoverflow.com/questions/4862178/remove-rows-with-all-or-some-nas-missing-values-in-data-frame
+#omit rows in ggplot: https://stackoverflow.com/questions/61899943/how-do-i-omit-rows-in-a-ggplot
+#renaming columns in R; https://sparkbyexamples.com/r-programming/rename-column-in-r/

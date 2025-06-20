@@ -41,7 +41,8 @@ pacman::p_load(tidyverse, janitor, patchwork, extrafont, pBrackets, colorspace, 
 
   income <-read_csv(here("data", "income.csv")) %>% 
     janitor::clean_names()
-  img <- readPNG(here("Parchment_paper.png"))
+  #I tried to add in the parchment paper image for the assignment but could not get this to work
+#  img <- readPNG(here("Parchment_paper.png"))
   
   income <- income %>% 
     pivot_longer(cols = c('rent', 'food', 'clothes', 'tax', 'other'),
@@ -370,7 +371,7 @@ ggplot(covid_survey_summary_stats, aes(y = explanatory_value, x = mean_response)
   labs(
     x = NULL,y = NULL
   )
-
+#This plot is similar to question 3 however despite much difficulty I could not flip the responses to the top and the explanatory to the right side to better visualize the error bars unfortunately. These error bars at 25% and 75% highlight better the diversity in responses, whereas the 90-10%-iles took up most of the plots, not allowing for the diversity by gender, ethnicity and those who are not vaccinated. 
 
 ```
 ## 5 - COVID survey - 5a: Diverging barchart 100%
@@ -468,16 +469,15 @@ likert <- covid_survey_longer %>%
   ungroup() %>%
   mutate(percent = ifelse(positive_negative == "Negative", -percent, percent))
 
-
+# I tried many ways to wrap the text on the x-axis and was unable to fix this.
 #Plot diverging bar chart
 likert_plot <- ggplot(likert, aes(x = response, y = percent, fill = positive_negative)) +
   geom_col() +
   scale_y_continuous(labels = abs) +
-  scale_fill_manual(values = c("Positive" = "#1b9e77", "Negative" = "#d95f02")) +
   labs(
     x = NULL,
     y = "Percentage",
-    fill = "Response Sentiment",
+    fill = "Responses",
     title = "Covid-19 vaccination attitudes and opinions survey:\nResponses by percentage of approval",
     caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine"
   ) +
@@ -487,9 +487,7 @@ likert_plot <- ggplot(likert, aes(x = response, y = percent, fill = positive_neg
 # display the plot
 likert_plot
 
-
-
-
+# This barchart really shows where the majority of the negative opinions around the Covid-19 vaccination lie. They are mainly centered around the safety of the vaccine. The other graphics dont show this as well. 
 ```
 ## 5 - COVID survey - 5b: Stacked barchart 100%
 
@@ -581,14 +579,17 @@ likert_percentages$response_value <- factor(likert_percentages$response_value,
     levels = 1:5,
     labels = c("Approve", "Slightly Approve", "Neutral", "Slightly Disapprove", "Disapprove"))
 
+#I tried to wrap the x-axis responses but was unable to get that to work
 #Plot stacked bar chart
 ggplot(likert_percentages, aes(x = response, y = percentage, fill = response_value)) +
   geom_col() +
   scale_fill_brewer(palette = "Viridis", direction = -1, name = "Response") +
-  labs(x = NULL, y = "Percentage", title = "Covid-19 vaccination attitudes and opinions survey: \nResponses by percentage of approval", citation = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine") +
+  labs(x = NULL, y = "Percentage", title = "Covid-19 vaccination attitudes and opinions survey: \nResponses by percentage of approval", caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine") +
   theme_minimal(base_size = 12) +
   theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 8))
 
+#This stacked barchart clearly highlights that the majority of the negative responses were coming from concerns around vaccine safety. This barchart offers a different perspective on the overall responses that were not visible in the graphic with individual mean and 10th/ 90th percentiles graphic.
+#The two charts in 5a and 5b seem to be fairly similar in that the negative responses are more visible in this format compared to the format in questions 3 and 4.
 ```
 
 ### Citations
@@ -602,10 +603,9 @@ https://stackoverflow.com/questions/6851522/how-do-i-plot-a-stacked-bar-with-ggp
 #renaming columns in R; https://sparkbyexamples.com/r-programming/rename-column-in-r/
 #calculating the mean in R: https://www.statology.org/r-mean-by-group/ 
 #percentiles in R: https://www.geeksforgeeks.org/r-language/how-to-calculate-percentiles-in-r/
-#chatGPT : tried using chatGPT after several hours on my own to get the ggplot to be re-oriented without success
-
-#4: 
+#chatGPT : after several hours and continuous errors in the code, I attempted to correct the errors in the ggplot and to re-orient the plot, without success
 
 #5:
+#how to create diverging barchart: I tried geom bar but ended up using geom col: https://r-charts.com/part-whole/diverging-bar-chart-ggplot2/, https://rfortherestofus.com/2021/10/diverging-bar-chart/
 #how to create likert stacked barchart: https://stackoverflow.com/questions/67196796/plot-stacked-bar-chart-of-likert-variables-in-r
 

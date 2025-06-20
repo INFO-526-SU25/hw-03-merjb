@@ -12,7 +12,7 @@ toc: true
 if (!require("pacman"))
   install.packages("pacman")
 pacman::p_load(here)
-pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, dsbox)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, dsbox, ggplot2)
 devtools::install_github("tidyverse/dsbox")
 library(dsbox)
 
@@ -235,8 +235,7 @@ ggplot(covid_survey_summary_stats, aes(y = explanatory_value, x = mean_response)
 
 ```{r}
 #| label: COVID survey re-reconstruct with 25 and 75th percentiles
-#devtools::install_github("tidyverse/dsbox")
-#library(dsbox)
+
 covid_survey <-read_csv(here("data", "covid-survey.csv"))
 
 
@@ -365,8 +364,8 @@ ggplot(covid_survey_summary_stats, aes(y = explanatory_value, x = mean_response)
     strip.background = element_blank(),
     strip.text.y.right = element_text(angle = 0), 
     strip.text.x.top = element_text(angle = 0),
-    axis.text.y = element_text(size = 10),
-    axis.text.x = element_text(size = 10)
+    axis.text.y = element_text(size = 8),
+    axis.text.x = element_text(size = 8)
   ) +
   labs(
     x = NULL,y = NULL
@@ -374,16 +373,221 @@ ggplot(covid_survey_summary_stats, aes(y = explanatory_value, x = mean_response)
 
 
 ```
-
-## 5 - COVID survey - another view
+## 5 - COVID survey - 5a: Diverging barchart 100%
 
 ```{r}
-#| label: label-me-3
+#| label: Diverging bar chart
+covid_survey <-read_csv(here("data", "covid-survey.csv"))
+
+
+  # Rename columns to first-row names
+colnames(covid_survey)[2] = "exp_profession"
+colnames(covid_survey)[1] = "response_id"
+colnames(covid_survey)[3] = "exp_flu_vax"
+colnames(covid_survey)[4] = "exp_gender"
+colnames(covid_survey)[5] = "exp_race"
+colnames(covid_survey)[6] = "exp_ethnicity"
+colnames(covid_survey)[7] = "exp_age_bin"
+colnames(covid_survey)[8] = "exp_already_vax"
+colnames(covid_survey)[9] = "resp_safety"
+colnames(covid_survey)[10] = "resp_confidence_science"
+colnames(covid_survey)[11] = "resp_concern_safety"
+colnames(covid_survey)[12] = "resp_feel_safe_at_work"
+colnames(covid_survey)[13] = "resp_will_recommend"
+colnames(covid_survey)[14] = "resp_trust_info"
+dim(covid_survey)
+
+#remove first row
+covid_survey <- covid_survey[-1, ]
+#remove only rows with all NA, the first version did not work
+#covid_survey |>
+#  filter(if_all(everything(), ~!is.na(.x)))
+covid_survey <- covid_survey[!(is.na(covid_survey$exp_profession)) | !(is.na(covid_survey$exp_flu_vax)) | !(is.na(covid_survey$exp_gender)) | !(is.na(covid_survey$exp_race)) | !(is.na(covid_survey$exp_ethnicity)) | !(is.na(covid_survey$exp_age_bin)) | !(is.na(covid_survey$exp_already_vax)) | !(is.na(covid_survey$resp_safety)) | !(is.na(covid_survey$resp_confidence_science)) | !(is.na(covid_survey$resp_concern_safety)) | !(is.na(covid_survey$resp_feel_safe_at_work)) | !(is.na(covid_survey$resp_will_recommend)) | !(is.na(covid_survey$resp_trust_info)),]
+
+#convert chr to dbl
+covid_survey$resp_safety <- as.numeric(as.character(covid_survey$resp_safety)) 
+covid_survey$resp_confidence_science <- as.numeric(as.character(covid_survey$resp_confidence_science)) 
+covid_survey$resp_concern_safety <- as.numeric(as.character(covid_survey$resp_concern_safety)) 
+covid_survey$resp_feel_safe_at_work <- as.numeric(as.character(covid_survey$resp_feel_safe_at_work)) 
+covid_survey$resp_will_recommend <- as.numeric(as.character(covid_survey$resp_will_recommend)) 
+covid_survey$resp_trust_info <- as.numeric(as.character(covid_survey$resp_trust_info)) 
+
+library(dplyr)
+covid_survey <- covid_survey %>% 
+  mutate(
+  exp_already_vax=recode(exp_already_vax, '0'='No', '1'='Yes'),
+  exp_flu_vax=recode(exp_flu_vax, '0'='No', '1'='Yes'),
+  exp_profession=recode(exp_profession, '0'='Medical', '1'='Nursing'),
+  exp_gender=recode(exp_gender, '0'='Male', '1'='Female', '3' = 'Non-binary third gender', '4' = 'Prefer not to say'),
+  exp_race=recode(exp_race, '1'='American Indian/ Alaskan Native', '2'='Asian', '3'='Black/ African American', '4'='Native Hawaiian/ Other', '5' = 'White'),
+  exp_ethnicity=recode(exp_ethnicity, '1'='Hispanic/ Latino', '2'='Non-Hispanic/ Non-Latino'),
+  exp_age_bin=recode(exp_age_bin, '0'='<20', '20'='21-25', '25'='26-30', '30'='>30' ))
+
+
+library(tidyr)
+covid_survey_longer <- covid_survey |>
+  pivot_longer(
+    cols = starts_with("exp_"),
+    names_to = "explanatory",
+    values_to = "explanatory_value"
+  ) |>
+  filter(!is.na(explanatory_value)) |>
+  pivot_longer(
+    cols = starts_with("resp_"),
+    names_to = "response",
+    values_to = "response_value"
+  )
+
+#recode the data labels
+covid_survey_longer <- covid_survey_longer %>%
+  mutate(response = recode(response,
+    "resp_safety"               = "Based on my understanding, I believe the vaccine is safe",
+    "resp_confidence_science"  = "I trust the science behind the vaccine",
+    "resp_concern_safety"      = "I am concerned about the safety of the vaccine",
+    "resp_feel_safe_at_work"   = "The vaccine will make me feel safe at work",
+    "resp_will_recommend"      = "I will recommend the vaccine to others",
+    "resp_trust_info"          = "I trust the information I’ve received about the vaccine"
+  ))
+
+
+likert <- covid_survey_longer %>%
+  filter(!is.na(response_value)) %>%
+  mutate(
+    response_score = recode(response_value,
+      "Approve" = 1,
+      "Slightly Approve" = 2,
+      "Neutral" = 3,
+      "Slightly Disapprove" = 4,
+      "Disapprove" = 5
+    ),
+    positive_negative = ifelse(response_score <= 3, "Positive", "Negative")
+  ) %>%
+  count(response, positive_negative) %>%
+  group_by(response) %>%
+  mutate(percent = 100 * n / sum(n)) %>%
+  ungroup() %>%
+  mutate(percent = ifelse(positive_negative == "Negative", -percent, percent))
+
+
+#Plot diverging bar chart
+likert_plot <- ggplot(likert, aes(x = response, y = percent, fill = positive_negative)) +
+  geom_col() +
+  scale_y_continuous(labels = abs) +
+  scale_fill_manual(values = c("Positive" = "#1b9e77", "Negative" = "#d95f02")) +
+  labs(
+    x = NULL,
+    y = "Percentage",
+    fill = "Response Sentiment",
+    title = "Covid-19 vaccination attitudes and opinions survey:\nResponses by percentage of approval",
+    caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+
+# display the plot
+likert_plot
 
 
 
-covid-survey <-read_csv(here("data", "covid-survey.csv"))
 
+```
+## 5 - COVID survey - 5b: Stacked barchart 100%
+
+```{r}
+#| label: Stacked bar chart
+covid_survey <-read_csv(here("data", "covid-survey.csv"))
+
+
+  # Rename columns to first-row names
+colnames(covid_survey)[2] = "exp_profession"
+colnames(covid_survey)[1] = "response_id"
+colnames(covid_survey)[3] = "exp_flu_vax"
+colnames(covid_survey)[4] = "exp_gender"
+colnames(covid_survey)[5] = "exp_race"
+colnames(covid_survey)[6] = "exp_ethnicity"
+colnames(covid_survey)[7] = "exp_age_bin"
+colnames(covid_survey)[8] = "exp_already_vax"
+colnames(covid_survey)[9] = "resp_safety"
+colnames(covid_survey)[10] = "resp_confidence_science"
+colnames(covid_survey)[11] = "resp_concern_safety"
+colnames(covid_survey)[12] = "resp_feel_safe_at_work"
+colnames(covid_survey)[13] = "resp_will_recommend"
+colnames(covid_survey)[14] = "resp_trust_info"
+dim(covid_survey)
+
+#remove first row
+covid_survey <- covid_survey[-1, ]
+#remove only rows with all NA, the first version did not work
+#covid_survey |>
+#  filter(if_all(everything(), ~!is.na(.x)))
+covid_survey <- covid_survey[!(is.na(covid_survey$exp_profession)) | !(is.na(covid_survey$exp_flu_vax)) | !(is.na(covid_survey$exp_gender)) | !(is.na(covid_survey$exp_race)) | !(is.na(covid_survey$exp_ethnicity)) | !(is.na(covid_survey$exp_age_bin)) | !(is.na(covid_survey$exp_already_vax)) | !(is.na(covid_survey$resp_safety)) | !(is.na(covid_survey$resp_confidence_science)) | !(is.na(covid_survey$resp_concern_safety)) | !(is.na(covid_survey$resp_feel_safe_at_work)) | !(is.na(covid_survey$resp_will_recommend)) | !(is.na(covid_survey$resp_trust_info)),]
+
+#convert chr to dbl
+covid_survey$resp_safety <- as.numeric(as.character(covid_survey$resp_safety)) 
+covid_survey$resp_confidence_science <- as.numeric(as.character(covid_survey$resp_confidence_science)) 
+covid_survey$resp_concern_safety <- as.numeric(as.character(covid_survey$resp_concern_safety)) 
+covid_survey$resp_feel_safe_at_work <- as.numeric(as.character(covid_survey$resp_feel_safe_at_work)) 
+covid_survey$resp_will_recommend <- as.numeric(as.character(covid_survey$resp_will_recommend)) 
+covid_survey$resp_trust_info <- as.numeric(as.character(covid_survey$resp_trust_info)) 
+
+library(dplyr)
+covid_survey <- covid_survey %>% 
+  mutate(
+  exp_already_vax=recode(exp_already_vax, '0'='No', '1'='Yes'),
+  exp_flu_vax=recode(exp_flu_vax, '0'='No', '1'='Yes'),
+  exp_profession=recode(exp_profession, '0'='Medical', '1'='Nursing'),
+  exp_gender=recode(exp_gender, '0'='Male', '1'='Female', '3' = 'Non-binary third gender', '4' = 'Prefer not to say'),
+  exp_race=recode(exp_race, '1'='American Indian/ Alaskan Native', '2'='Asian', '3'='Black/ African American', '4'='Native Hawaiian/ Other', '5' = 'White'),
+  exp_ethnicity=recode(exp_ethnicity, '1'='Hispanic/ Latino', '2'='Non-Hispanic/ Non-Latino'),
+  exp_age_bin=recode(exp_age_bin, '0'='<20', '20'='21-25', '25'='26-30', '30'='>30' ))
+
+
+library(tidyr)
+covid_survey_longer <- covid_survey |>
+  pivot_longer(
+    cols = starts_with("exp_"),
+    names_to = "explanatory",
+    values_to = "explanatory_value"
+  ) |>
+  filter(!is.na(explanatory_value)) |>
+  pivot_longer(
+    cols = starts_with("resp_"),
+    names_to = "response",
+    values_to = "response_value"
+  )
+
+#recode the data labels
+covid_survey_longer <- covid_survey_longer %>%
+  mutate(response = recode(response,
+    "resp_safety"               = "Based on my understanding, I believe the vaccine is safe",
+    "resp_confidence_science"  = "I trust the science behind the vaccine",
+    "resp_concern_safety"      = "I am concerned about the safety of the vaccine",
+    "resp_feel_safe_at_work"   = "The vaccine will make me feel safe at work",
+    "resp_will_recommend"      = "I will recommend the vaccine to others",
+    "resp_trust_info"          = "I trust the information I’ve received about the vaccine"
+  ))
+
+#from the pivot longer we will look at the likert resonses per question
+likert_percentages <- covid_survey_longer %>%
+  filter(!is.na(response_value)) %>%
+  group_by(response, response_value) %>%
+  summarise(count = n(), .groups = "drop") %>% 
+  group_by(response) %>%
+  mutate(percentage = count / sum(count) * 100)
+
+
+#Recode Likert values
+likert_percentages$response_value <- factor(likert_percentages$response_value,
+    levels = 1:5,
+    labels = c("Approve", "Slightly Approve", "Neutral", "Slightly Disapprove", "Disapprove"))
+
+#Plot stacked bar chart
+ggplot(likert_percentages, aes(x = response, y = percentage, fill = response_value)) +
+  geom_col() +
+  scale_fill_brewer(palette = "Viridis", direction = -1, name = "Response") +
+  labs(x = NULL, y = "Percentage", title = "Covid-19 vaccination attitudes and opinions survey: \nResponses by percentage of approval", citation = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine") +
+  theme_minimal(base_size = 12) +
+  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 8))
 
 ```
 
@@ -398,4 +602,10 @@ https://stackoverflow.com/questions/6851522/how-do-i-plot-a-stacked-bar-with-ggp
 #renaming columns in R; https://sparkbyexamples.com/r-programming/rename-column-in-r/
 #calculating the mean in R: https://www.statology.org/r-mean-by-group/ 
 #percentiles in R: https://www.geeksforgeeks.org/r-language/how-to-calculate-percentiles-in-r/
+#chatGPT : tried using chatGPT after several hours on my own to get the ggplot to be re-oriented without success
+
+#4: 
+
+#5:
+#how to create likert stacked barchart: https://stackoverflow.com/questions/67196796/plot-stacked-bar-chart-of-likert-variables-in-r
 

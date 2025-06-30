@@ -386,7 +386,7 @@ ggplot(covid_survey_summary_stats, aes(x = explanatory_value, y = mean_response)
     caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine"
   )
 
-#Thipanel.spacing.x = #This plot is similar to question 3, however, the error bars at 25% and 75% highlight better the diversity in responses, whereas the 90-10%-iles took up most of the plots, not allowing for the diversity by gender, ethnicity and those who are not vaccinated. 
+#This plot is similar to question 3, however, the error bars at 25% and 75% highlight better the diversity in responses, whereas the 90-10%-iles took up most of the plots, not allowing for the diversity by gender, ethnicity and those who are not vaccinated. 
 
 
 
@@ -493,6 +493,7 @@ likert <- covid_survey_longer %>%
 likert_plot <- ggplot(likert, aes(x = response, y = percent, fill = positive_negative)) +
   geom_col() +
   scale_y_continuous(labels = abs) +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
   labs(
     x = NULL,
     y = "Percentage",
@@ -501,12 +502,13 @@ likert_plot <- ggplot(likert, aes(x = response, y = percent, fill = positive_neg
     caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine"
   ) +
   theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 8))
+  theme(
+    axis.text.x = element_text(angle = 0, hjust = .5, size = 8))
 
 # display the plot
 likert_plot
 
-# This barchart really shows where the majority of the negative opinions around the Covid-19 vaccination lie. They are mainly centered around the safety of the vaccine. The other graphics dont show this as well. 
+# This barchart clearly shows where the majority of the negative opinions around the Covid-19 vaccination lie. They are mainly centered around the safety of the vaccine, whereas the other graphics don't show this as clearly 
 ```
 ## 5 - COVID survey - 5b: Stacked barchart 100%
 
@@ -603,12 +605,15 @@ likert_percentages$response_value <- factor(likert_percentages$response_value,
 ggplot(likert_percentages, aes(x = response, y = percentage, fill = response_value)) +
   geom_col() +
   scale_fill_brewer(palette = "Viridis", direction = -1, name = "Response") +
-  labs(x = NULL, y = "Percentage", title = "Covid-19 vaccination attitudes and opinions survey: \nResponses by percentage of approval", caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine") +
+  scale_x_discrete(labels = function(x) str_wrap(x, width = 15))+
+  labs(x = NULL, y = "Percentage", 
+       title = "Covid-19 vaccination attitudes and opinions survey: \nResponses by percentage of approval", 
+       caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine") +
   theme_minimal(base_size = 12) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 8))
+  theme(axis.text.x = element_text(angle = 0, hjust = .5, size = 8))
 
-#This stacked barchart clearly highlights that the majority of the negative responses were coming from concerns around vaccine safety. This barchart offers a different perspective on the overall responses that were not visible in the graphic with individual mean and 10th/ 90th percentiles graphic.
-#The two charts in 5a and 5b seem to be fairly similar in that the negative responses are more visible in this format compared to the format in questions 3 and 4.
+#This stacked barchart highlights the majority of the negative responses were coming from concerns around vaccine safety. This offers a different perspective on the overall responses that were not visible in the graphic with individual mean and 10th/ 90th percentiles as broken down per group.
+#The two charts in 5a and 5b seem to be fairly similar in that the negative responses are more visible in the diverging barchart/ stacked barchart format compared to the mean and error-bars format in questions 3 and 4.
 ```
 
 ### Citations
@@ -616,7 +621,7 @@ ggplot(likert_percentages, aes(x = response, y = percentage, fill = response_val
 #1: #DuBois challenge from tidy_tuesday \#, how to create a stacked bar plot https://github.com/marisalyn/tidy_tuesday/blob/master/20210216_dubois.Rmd
 https://stackoverflow.com/questions/6851522/how-do-i-plot-a-stacked-bar-with-ggplot 
 
-#3: How to recode in R: https://www.statology.org/recode-dplyr/
+#3 & #4: How to recode in R: https://www.statology.org/recode-dplyr/
 #remove rows with all NA: https://stackoverflow.com/questions/4862178/remove-rows-with-all-or-some-nas-missing-values-in-data-frame
 #omit rows in ggplot: https://stackoverflow.com/questions/61899943/how-do-i-omit-rows-in-a-ggplot
 #renaming columns in R; https://sparkbyexamples.com/r-programming/rename-column-in-r/

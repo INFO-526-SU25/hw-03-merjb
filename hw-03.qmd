@@ -7,12 +7,12 @@ format:
 toc: true
 ---
 
-```{r}
+```{r load-packages, message = FALSE}
 #SETUP for THEMES 
 if (!require("pacman"))
   install.packages("pacman")
 pacman::p_load(here)
-pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, dsbox, ggplot2)
+pacman::p_load(tidyverse, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, dsbox, ggplot2, janitor, patchwork, extrafont, pBrackets, ggimage, grid, png)
 devtools::install_github("tidyverse/dsbox")
 library(dsbox)
 
@@ -30,41 +30,43 @@ knitr::opts_chunk$set(
 ```
 
 ## 1 - Du Bois challenge.
-
 ```{r}
 #| label: Du Bois challenge
 
-  if (!require("pacman"))
-  install.packages("pacman")
-pacman::p_load(here)
-pacman::p_load(tidyverse, janitor, patchwork, extrafont, pBrackets, colorspace, palmerpenguins, fs, lubridate, scales, openintro, gghighlight, glue, ggridges, dplyr, tidyr, forcats, ggimage, grid, png)
 
-  income <-read_csv(here("data", "income.csv")) %>% 
-    janitor::clean_names()
-  #I tried to add in the parchment paper image for the assignment but could not get this to work
-#  img <- readPNG(here("Parchment_paper.png"))
-  
-  income <- income %>% 
-    pivot_longer(cols = c('rent', 'food', 'clothes', 'tax', 'other'),
-                 names_to = "category",
-                 values_to = "percentage")
-  income %>% 
-    ggplot(aes(x = percentage, y = class, fill = category)) +
-    geom_bar(stat = "identity", color = "white")+
-    #unsuccessful in adding background image from png file
-#    annotation_custom(rasterGrob(img)) +
-    scale_fill_manual(
-      values = c("rent" = "black", "food" = "#B19cd9", "clothes" = "#ffc0cb", "tax" = "#a1a1a1", "other" = "#e9e9e9")) +
-    #percentage labels not lining up well nor with % symbols
-    geom_text(aes(label = percentage), 
-              position = position_stack(reverse = TRUE,vjust = 0.1)) +
-    theme(legend.position = "none") +
-      labs(
-        y = "",
-        x = "",
-        title = "INCOME AND EXPENDITURE OF 150 NEGRO FAMILIES IN ATLANTA, GA., U.S.A.")+
-    theme(plot.title = element_text(hjust = 0.2))
+income <- read_csv(here("data", "income.csv")) %>% 
+  janitor::clean_names()
 
+img <- readPNG(here("images", "Parchment_paper.png"))
+g <- rasterGrob(img, width = unit(1,"npc"), height = unit(1,"npc"))
+
+income <- income %>% 
+  pivot_longer(cols = c('rent', 'food', 'clothes', 'tax', 'other'),
+               names_to = "category",
+               values_to = "percentage")
+
+income %>% 
+  ggplot(aes(x = percentage, y = class, fill = category)) +
+  annotation_custom(g, xmin = -Inf, xmax = Inf, ymin = -Inf, ymax = Inf) +
+  geom_bar(stat = "identity", color = "white") +
+  geom_text(aes(label = paste0(percentage, "%")),
+            position = position_stack(vjust = 0.5),
+            size = 3,
+            color = "blue") +
+  scale_fill_manual(
+    values = c("rent" = "black", "food" = "#B19cd9", "clothes" = "#ffc0cb", "tax" = "#a1a1a1", "other" = "#e9e9e9")
+  ) +
+  theme_minimal() +
+  theme(
+    legend.position = "right",
+    plot.title = element_text(size = 12, hjust = 0.5)
+  ) +
+  labs(
+    y = "",
+    x = "",
+    title = "INCOME AND EXPENDITURE OF 150 NEGRO FAMILIES IN ATLANTA, GA., U.S.A.",
+    caption = "W. E. B. Du Bois, 1900"
+  )
 ```
 
 ## 2 - COVID survey - interpret
@@ -203,26 +205,26 @@ covid_survey_summary_stats <- covid_survey_summary_stats %>%
     "exp_already_vax"     = "Already Vaccinated"
   ))
 
-#graph the data; I could not get the response codes across the top nor the explanatory variables on the right
-ggplot(covid_survey_summary_stats, aes(y = explanatory_value, x = mean_response)) +
-  geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, color = "steelblue") +
-  geom_point(color = "steelblue", size = 1) +
+ggplot(covid_survey_summary_stats, aes(x = explanatory_value, y = mean_response)) +
+  geom_point(size = 1) +
   coord_flip() +
+  geom_errorbar(aes(ymin = low, ymax = high)) +
   facet_grid(
     rows = vars(explanatory),
     cols = vars(response),
-    labeller = labeller(response = label_wrap_gen(15))) +
-  theme_void() +
+    labeller = labeller(response = label_wrap_gen(15)),
+    scales = "free_y") +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_void () +
   theme(
     strip.placement = "outside",
     strip.background = element_blank(),
-    strip.text.y.right = element_text(), 
-    strip.text.x.top = element_text(
-      vjust = 0.5,
-      size = 8,
-      angle = 0),
-    axis.text.y = element_blank(),
-    axis.text.x = element_blank()
+    strip.text.y.right = element_text(angle = 0), 
+    strip.text.x.top = element_text(angle = 0),
+    panel.spacing.x = unit(.2, "lines"),
+    panel.spacing.y = unit(.5, "lines"),
+    axis.text.x = element_text(size = 6),
+    axis.text.y = element_text(size = 6),
   ) +
   labs(
     x = NULL,
@@ -304,12 +306,14 @@ covid_survey_longer <- covid_survey |>
     names_to = "response",
     values_to = "response_value"
   )
+
+
 # Grouped and calculate summary statistics for each response variable by explanatory variables
 covid_survey_stats_by_group <- covid_survey_longer %>%
   group_by(explanatory, explanatory_value, response) %>% 
   summarise(
-    "low" = quantile(response_value, probs = .1, na.rm = TRUE),
-    "high" = quantile(response_value, probs = .9, na.rm = TRUE),
+    "low" = quantile(response_value, probs = .25, na.rm = TRUE),
+    "high" = quantile(response_value, probs = .75, na.rm = TRUE),
     mean_response = mean(response_value, na.rm = TRUE),
     .groups = "drop")   
 
@@ -317,8 +321,8 @@ covid_survey_stats_by_group <- covid_survey_longer %>%
 covid_survey_summary_stats_all <- covid_survey_longer %>% 
   group_by(response) %>% 
   summarise(
-    "low" = quantile(response_value, 0.10, na.rm = TRUE),
-    "high" = quantile(response_value, 0.90, na.rm = TRUE),
+    "low" = quantile(response_value, 0.25, na.rm = TRUE),
+    "high" = quantile(response_value, 0.75, na.rm = TRUE),
     mean_response = mean(response_value, na.rm = TRUE),
     explanatory = "All",
     explanatory_value = factor(""),
@@ -352,24 +356,28 @@ covid_survey_summary_stats <- covid_survey_summary_stats %>%
     "exp_already_vax"     = "Already Vaccinated"
   ))
 
-#graph the data; I could not get the response codes across the top nor the explanatory variables on the right
-#finally adjusted the response codes and explanatory values
+
+
 ggplot(covid_survey_summary_stats, aes(x = explanatory_value, y = mean_response)) +
-  geom_point(color = "steelblue", size = 1) +
+  geom_point(size = 1) +
   coord_flip() +
-  geom_errorbar(aes(ymin = low, ymax = high), width = 0.2, color = "steelblue") +
+  geom_errorbar(aes(ymin = low, ymax = high)) +
   facet_grid(
     rows = vars(explanatory),
     cols = vars(response),
-             labeller = labeller(response = label_wrap_gen(15))) +
-  theme_void() +
+    labeller = labeller(response = label_wrap_gen(15)),
+    scales = "free_y") +
+  scale_y_continuous(labels = scales::label_number(accuracy = 0.1)) +
+  theme_void () +
   theme(
     strip.placement = "outside",
     strip.background = element_blank(),
     strip.text.y.right = element_text(angle = 0), 
     strip.text.x.top = element_text(angle = 0),
-    axis.text.y = element_text(size = 8),
-    axis.text.x = element_text(size = 8)
+    panel.spacing.x = unit(.02, "lines"),
+    panel.spacing.y = unit(.2, "lines"),
+    axis.text.x = element_text(size = 6),
+    axis.text.y = element_text(size = 6),
   ) +
   labs(
     x = NULL,
@@ -377,7 +385,12 @@ ggplot(covid_survey_summary_stats, aes(x = explanatory_value, y = mean_response)
      title = "Covid-19 vaccination attitudes and opinions survey:\nResponses by percentage of approval",
     caption = "Pavan Shah, Giorgio Caturegli, Galen Shi, and Joshua Materi at Johns Hopkins School of Medicine"
   )
-#This plot is similar to question 3, however, the error bars at 25% and 75% highlight better the diversity in responses, whereas the 90-10%-iles took up most of the plots, not allowing for the diversity by gender, ethnicity and those who are not vaccinated. 
+
+#Thipanel.spacing.x = #This plot is similar to question 3, however, the error bars at 25% and 75% highlight better the diversity in responses, whereas the 90-10%-iles took up most of the plots, not allowing for the diversity by gender, ethnicity and those who are not vaccinated. 
+
+
+
+
 
 ```
 ## 5 - COVID survey - 5a: Diverging barchart 100%
